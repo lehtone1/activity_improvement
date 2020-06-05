@@ -1,0 +1,200 @@
+---
+title: "Activity Improvement"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Exploratory Analysis
+
+
+```{r echo=FALSE; message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(mlbench)
+library(caret)
+```
+
+We will begin the analysis by acquiring the training and testing data. 
+
+```{r}
+
+# training <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+# testing <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+# write.csv(training, "data/training.csv")
+# write.csv(testing, "data/testing.csv")
+
+training <- read.csv("data/training.csv")
+testing <- read.csv("data/testing.csv")
+```
+
+The data is of a high dimension having 19622 observations and 161 variables
+
+```{r }
+dim(training)
+```
+
+When plotting the classe-variable that serves as an outcome in the model, we see that A - doing the exercice correctly, is the most common outcome. It will serve as a good baseline prediction. We also see that even tho there are some small imbalances between the ouctomes in the dataset, all of the classes have sufficient amount of examples.
+
+```{r echo=FALSE}
+qplot(training$classe, geom="bar")
+```
+
+When looking at the different columns of the dataset, we see that there are some columns that are used for book keeping in the dataset. Columns 1-8 seem to be of this type.
+
+```{r}
+str(training[,1:10])
+```
+
+## 2. Cleaning Data
+
+### Removing book keeping columns
+
+We will start the cleaning of the dataset, by removing the book keeping columns.
+
+```{r }
+training <- select(training, -c(X.1:num_window))
+testing <- select(testing, -c(X.1:num_window))
+```
+
+### Removing NA columns
+
+After removing the book keeping columns we will have a look on how much NA-values are included in each column.
+
+```{r }
+table(colSums(is.na(training)) / dim(training)[1])
+```
+
+We see that 67 columns contain mainly NA-values. We will exclude these columns out.
+```{r }
+noNaColumns <- colSums(is.na(training)) / dim(training)[1] == 0
+
+training <- training[, noNaColumns]
+testing <- testing[, noNaColumns]
+```
+
+### Removing empty string columns
+
+Next we will check how much there are columns that contain "" -values.
+
+```{r }
+table(colSums(training == "") / dim(training)[1])
+```
+
+From the remaining columns there are 34 that contain mainly ""-values. We will exclude these columns out.
+
+```{r }
+noEmptyColumns <- colSums(training == "") / dim(training)[1] == 0
+
+training <- training[, noEmptyColumns]
+testing <- testing[, noEmptyColumns]
+```
+
+## 2. Building a Model
+
+### Feature Selection
+
+This far we have already managed to drop the number of features from  161 to 54. Next we will investgate if we can exclude even more features for making the model faster, understandable and to decrease the variance of the model.
+
+```{r }
+correlationMatrix <- cor(training[,1:52])
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=.75)
+highlyCorrelated
+```
+
+We will exclude these columns out.
+
+```{r }
+training <- training[,-highlyCorrelated]
+testing <- testing[,-highlyCorrelated]
+dim(training)
+```
+
+By doing this we are able to drop the number of features into 34
+
+### Baseline
+
+As our baseline accuracy we will use a dummy model that predicts always "A", wchich was the most common outcome in the dataset.
+
+```{r }
+y <- training$classe
+mfreq <- sort(table(training$classe),decreasing=TRUE)[1]
+base <- mfreq/length(y)
+base
+```
+
+With only predicting "A", we will get an accuracy of 0.2843747
+
+### K-Nearest Neighbors - An Interpretable Predictor
+
+As the first model we will build a K-Nearest-Neighbors predictor. We chose this as our first model for it is extremely easy to exlpain and interprete. 
+
+Due to the large sample size and long running time, we used parallell processing in the training to make the training process faster.
+
+In the K-Fold Cross Validation we chose the number of folds to be 10 due to the large amount of observations in the dataset.
+
+```{r }
+
+# library(parallel)
+# library(doParallel)
+# 
+# cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+# registerDoParallel(cluster)
+# 
+# train_control <- trainControl(method="cv", number=10, allowParallel = TRUE)
+# model <- train(classe ~ ., method="knn", data=training, trControl=train_control)
+# saveRDS(model, "model.rds")
+# 
+# stopCluster(cluster)
+# registerDoSEQ()
+
+```
+
+```{r }
+model <-readRDS("model.rds")
+```
+
+Even with this very simple model we get an almost perfect testing accuracy of 0.999 with the cross validation. 
+
+```{r }
+model
+model$resample
+confusionMatrix.train(model)
+```
+
+The outcomed seem to be very clearly distinctive based on the features used in the training data, giving an accuracy of 0.999. Due to this we would actually not need to use a more complex algortihm for training, bu we will repeat the process with random forest model out of curiosity and practice.
+
+### Random Forest model
+
+We repeat the same training process as with KNN classifier. The only difference is that we replace the method to be random forest and we pre-process the data before giving it to the classifier.
+
+```{r }
+
+# library(parallel)
+# library(doParallel)
+# 
+# cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+# registerDoParallel(cluster)
+# 
+# train_control <- trainControl(method="cv", number=10, allowParallel = TRUE)
+# model2 <- train(classe ~ ., method="rf", preProcess = c("center", "scale"), data=training, trControl=train_control)
+# saveRDS(model, "model2.rds")
+# 
+# stopCluster(cluster)
+# registerDoSEQ()
+```
+
+```{r }
+model2 <-readRDS("model2.rds")
+```
+
+As with the KNN-classifier we get a near perfect accuracy with random forest classifier.
+
+```{r }
+model2
+model2$resample
+confusionMatrix.train(model2)
+```
+
