@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## 1. Exploratory Analysis
 
 
-```{r echo=FALSE; message=FALSE}
+```{r echo=FALSE, message=FALSE}
 library(ggplot2)
 library(dplyr)
 library(mlbench)
