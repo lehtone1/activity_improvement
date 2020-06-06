@@ -8,7 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ## Summary
 
-In this analysis the idea was to predict how well a subject is performing a weight lifting exercice based on accelerator data gathered from different parts of the body. 
+In this project the goal was to predict how well a subject is performing a weight lifting exercice based on accelerator data gathered from different parts of the body. 
 
 Approach:
 
@@ -61,11 +61,16 @@ We will begin the analysis by acquiring the training and testing data.
 # write.csv(training, "data/training.csv")
 # write.csv(testing, "data/testing.csv")
 
-training <- read.csv("data/training.csv")
-testing <- read.csv("data/testing.csv")
+data <- read.csv("data/training.csv")
+courseTesting <- read.csv("data/testing.csv")
+
+set.seed(1991)
+trainingIndex <- createDataPartition(y = data$classe, p = 0.7, list = FALSE)
+training <- data[trainingIndex,]
+testing <- data[-trainingIndex,]
 ```
 
-The data is of a high dimension having 19622 observations and 161 variables
+The training data is of a high dimension having 13737 observations and 161 variables
 
 ```{r }
 dim(training)
@@ -90,8 +95,9 @@ str(training[,1:10])
 We will start the cleaning of the dataset, by removing the book keeping columns.
 
 ```{r }
-training <- select(training, -c(X.1:num_window))
-testing <- select(testing, -c(X.1:num_window))
+training <- select(training, -c(X:num_window))
+testing <- select(testing, -c(X:num_window))
+courseTesting <-  select(courseTesting, -c(X:num_window))
 ```
 
 ### Removing NA columns
@@ -108,6 +114,7 @@ noNaColumns <- colSums(is.na(training)) / dim(training)[1] == 0
 
 training <- training[, noNaColumns]
 testing <- testing[, noNaColumns]
+courseTesting <- courseTesting[, noNaColumns]
 ```
 
 ### Removing empty string columns
@@ -118,13 +125,13 @@ Next we will check how much there are columns that contain "" -values.
 table(colSums(training == "") / dim(training)[1])
 ```
 
-From the remaining columns there are 34 that contain mainly ""-values. We will exclude these columns out.
+From the remaining columns there are 33 that contain mainly ""-values. We will exclude these columns out.
 
 ```{r }
 noEmptyColumns <- colSums(training == "") / dim(training)[1] == 0
-
 training <- training[, noEmptyColumns]
 testing <- testing[, noEmptyColumns]
+courseTesting <- courseTesting[, noEmptyColumns]
 ```
 
 ## 2. Building a Model
@@ -144,10 +151,11 @@ We will exclude these columns out.
 ```{r }
 training <- training[,-highlyCorrelated]
 testing <- testing[,-highlyCorrelated]
+courseTesting <-courseTesting[,-highlyCorrelated]
 dim(training)
 ```
 
-By doing this we are able to drop the number of features into 34
+By doing this we are able to drop the number of features into 33
 
 ### Baseline
 
@@ -160,7 +168,7 @@ base <- mfreq/length(y)
 base
 ```
 
-With only predicting "A", we will get an accuracy of 0.2843747
+With only predicting "A", we will get an accuracy of 0.2843416
 
 ### K-Nearest Neighbors - An Interpretable Predictor
 
@@ -168,7 +176,7 @@ As the first model we will build a K-Nearest-Neighbors predictor. We chose this 
 
 Due to the large sample size and long running time, we used parallell processing in the training to make the training process faster.
 
-In the K-Fold Cross Validation we chose the number of folds to be 10 due to the large amount of observations in the dataset.
+In the K-Fold Cross Validation we chose the number of folds to be 10 due to the large amount of observations (>10000) in the dataset.
 
 ```{r }
 
@@ -191,15 +199,21 @@ In the K-Fold Cross Validation we chose the number of folds to be 10 due to the 
 model <-readRDS("model.rds")
 ```
 
-Even with this very simple model we get an almost perfect testing accuracy of 0.999 with the cross validation. 
+Even with this very simple model we get an almost perfect testing accuracy of 0.998 with the cross validation. 
 
 ```{r }
 model
 model$resample
-confusionMatrix.train(model)
 ```
 
-The outcomed seem to be very clearly distinctive based on the features used in the training data, giving an accuracy of 0.999. Due to this we would actually not need to use a more complex algortihm for training, bu we will repeat the process with random forest model out of curiosity and practice.
+Accuracy with testing set
+
+```{r }
+pred1 <- predict(model, testing)
+confusionMatrix(pred1, testing$classe)
+```
+
+The outcomes seem to be very clearly distinctive based on the features used in the training data, giving an out-of-sample accuracy of 0.9992. Due to this we would actually not need to use a more complex algortihm for training, bu we will repeat the process with random forest model out of curiosity and practice.
 
 ### Random Forest model
 
@@ -230,6 +244,17 @@ As with the KNN-classifier we get a near perfect accuracy with random forest cla
 ```{r }
 model2
 model2$resample
-confusionMatrix.train(model2)
 ```
 
+Accuracy with testing set
+
+```{r }
+pred2 <- predict(model2, testing)
+confusionMatrix(pred2, testing$classe)
+```
+
+With the Random Forest classifier we are able to improve the out-of-sample accuracy slightly from 0.9992 -> 0.9997
+
+## Conclusion
+
+In the project we were able to get excellent results with both with KNN -classifier and Random Forest -classifier. The smallest out-of-sample error received with the Randomg Forest classifier was 0.0003
