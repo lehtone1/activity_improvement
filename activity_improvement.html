@@ -366,6 +366,36 @@ summary {
 </div>
 
 
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>In this analysis the idea was to predict how well a subject is performing a weight lifting exercice based on accelerator data gathered from different parts of the body.</p>
+<p>Approach:</p>
+<ol style="list-style-type: decimal">
+<li>Loading datasets exploring the dataset structure and features</li>
+<li>Cleaning dataset from unusable columns for analysis</li>
+<li>Performing feature selection, excluding highly correlated features</li>
+<li>Calculating the baseline for the model</li>
+<li>Building an interpretable first classifier</li>
+<li>Building a more complex classifier</li>
+</ol>
+<p>Packages used:</p>
+<p>ggplot2, dplyr, mlbench, caret, parallel, doParallel</p>
+<p>Predictors:</p>
+<p>data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants</p>
+<p>Outcomes:</p>
+<ul>
+<li>exactly according to the specification (Class A)</li>
+<li>throwing the elbows to the front (Class B)</li>
+<li>lifting the dumbbell only halfway (Class C)</li>
+<li>lowering the dumbbell only halfway (Class D)</li>
+<li>throwing the hips to the front (Class E)</li>
+</ul>
+</div>
+<div id="background" class="section level2">
+<h2>Background</h2>
+<p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <a href="http://groupware.les.inf.puc-rio.br/har" class="uri">http://groupware.les.inf.puc-rio.br/har</a> (see the section on the Weight Lifting Exercise Dataset).</p>
+<p>(From exercice description)</p>
+</div>
 <div id="exploratory-analysis" class="section level2">
 <h2>1. Exploratory Analysis</h2>
 <p>We will begin the analysis by acquiring the training and testing data.</p>
